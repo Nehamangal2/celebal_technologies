@@ -1,18 +1,28 @@
 from data_loader import get_data
-from chunker import get_chunks
+from chunker import build_text_chunks
 from langchain_huggingface import HuggingFaceEmbeddings
 
-print("Step 1: Fetching data...")
-raw_data = get_data()
+EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
-print("Step 2: Chunking...")
-chunks = get_chunks(raw_data)
 
-print(f"Step 3: Initializing embedding model (sentence-transformers/all-MiniLM-L6-v2)...")
-embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+def run_pipeline():
+    print("Step 1: Loading raw data...")
+    dataset = get_data()
 
-print(f"Step 4: Generating embeddings for {len(chunks)} chunks (this might take a moment)...")
-vectors = embeddings_model.embed_documents(chunks)
+    print("Step 2: Splitting into chunks...")
+    text_chunks = build_text_chunks(dataset)
 
-print(f"\nSUCCESS! Generated {len(vectors)} vectors.")
-print(f"Sample vector (first 5 dimensions): {vectors[0][:5]}")
+    print(f"Step 3: Loading embedding model ({EMBEDDING_MODEL_NAME})...")
+    embedder = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+
+    print(f"Step 4: Embedding {len(text_chunks)} chunks (may take a bit)...")
+    vectors = embedder.embed_documents(text_chunks)
+
+    print(f"\nDone! Created {len(vectors)} embedding vectors.")
+    print(f"First vector preview (5 dims): {vectors[0][:5]}")
+
+    return vectors
+
+
+if __name__ == "__main__":
+    run_pipeline()
