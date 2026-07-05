@@ -1,24 +1,38 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-def get_chunks(dataset):
-    # Split text into 500 character chunks with a 50 character overlap
-    # Overlap helps to maintain context between chunks
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50
+CHUNK_SIZE = 500
+CHUNK_OVERLAP = 50
+
+
+def build_text_chunks(records):
+    """
+    Break each record's context text into overlapping chunks.
+    Overlap keeps some shared context between consecutive chunks
+    so meaning isn't lost at the boundaries.
+    """
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP
     )
-    
-    all_chunks = []
-    for row in dataset:
-        # We process the 'context' column from your loaded data
-        chunks = text_splitter.split_text(row['context'])
-        all_chunks.extend(chunks)
-    return all_chunks
+
+    chunk_list = []
+    for record in records:
+        text_chunks = splitter.split_text(record["context"])
+        chunk_list += text_chunks
+
+    return chunk_list
+
+
+def main():
+    from data_loader import get_data
+
+    dataset = get_data()
+    chunk_list = build_text_chunks(dataset)
+
+    print(f"\nNumber of chunks created: {len(chunk_list)}")
+    if chunk_list:
+        print(f"Example chunk:\n{chunk_list[0]}")
+
 
 if __name__ == "__main__":
-    from data_loader import get_data
-    raw_data = get_data()
-    
-    chunks = get_chunks(raw_data)
-    print(f"\nTotal chunks generated: {len(chunks)}")
-    print(f"Sample chunk: {chunks[0]}")
+    main()
