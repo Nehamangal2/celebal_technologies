@@ -1,33 +1,41 @@
 import chromadb
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_ollama import OllamaLLM 
+from langchain_ollama import OllamaLLM
 
-# 1. Setup
-client = chromadb.PersistentClient(path="./my_vector_db")
-collection = client.get_collection(name="rag_docs")
-embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-llm = OllamaLLM(model="llama3") # Local LLM loaded
+DB_PATH = "./my_vector_db"
+COLLECTION_NAME = "rag_docs"
+EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+LLM_MODEL_NAME = "llama3"
+TOP_K = 2
+
+# --- Setup ---
+db_client = chromadb.PersistentClient(path=DB_PATH)
+doc_collection = db_client.get_collection(name=COLLECTION_NAME)
+embedder = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+llm = OllamaLLM(model=LLM_MODEL_NAME)  # local model, runs via Ollama
+
 
 def get_answer(question):
-    # Retrieval
-    query_embedding = embedding_model.embed_query(question)
-    results = collection.query(query_embeddings=[query_embedding], n_results=2)
-    context = "\n".join(results['documents'][0])
-    
-    # Generation Prompt
+    # --- Retrieval step ---
+    q_embedding = embedder.embed_query(question)
+    results = doc_collection.query(query_embeddings=[q_embedding], n_results=TOP_K)
+    retrieved_context = "\n".join(results["documents"][0])
+
+    # --- Build prompt for generation ---
     prompt = f"""
     Answer the question based ONLY on the following context:
-    {context}
-    
+    {retrieved_context}
+
     Question: {question}
     Answer:
     """
-    
-    # LLM ko prompt bhejna
-    response = llm.invoke(prompt)
-    return response
+
+    # send prompt to the LLM
+    answer = llm.invoke(prompt)
+    return answer
+
 
 if __name__ == "__main__":
-    q = input("Ask a question: ")
+    user_question = input("Ask a question: ")
     print("Thinking...")
-    print("\nAI Answer:", get_answer(q))
+    print("\nAI Answer:", get_answer(user_question))
