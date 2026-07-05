@@ -1,16 +1,25 @@
 from datasets import load_dataset
 
+DATASET_NAME = "rajpurkar/squad"
+SPLIT = "train[:100]"
+
+
 def get_data():
-    print("Connecting to Hugging Face...")
-    # correct repo path 
-    dataset = load_dataset("rajpurkar/squad", split="train[:100]")
-    return dataset
+    print("Fetching dataset from Hugging Face Hub...")
+    # using the verified repo id for SQuAD
+    ds = load_dataset(DATASET_NAME, split=SPLIT)
+    return ds
+
+
+def main():
+    try:
+        ds = get_data()
+        print("\nData loaded successfully!")
+        print(f"Available columns: {ds.column_names}")
+        print(f"First context preview: {ds[0]['context'][:200]}...")
+    except Exception as err:
+        print(f"\nSomething went wrong: {err}")
+
 
 if __name__ == "__main__":
-    try:
-        data = get_data()
-        print("\nDataset successfully loaded!")
-        print(f"Columns: {data.column_names}")
-        print(f"Sample Context: {data[0]['context'][:200]}...")
-    except Exception as e:
-        print(f"\nError: {e}")
+    main()
